@@ -1,0 +1,161 @@
+buku
+public class Buku
+{
+    public int id { get; set; }    
+    public string? judul { get; set; }
+    public string? penulis { get; set; }
+    public string? penerbit { get; set; }
+    public string? issn { get; set; }
+    public int tahun { get; set; }
+    public int status { get; set; }
+}
+
+bukucon
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+
+namespace Stackup.Api.Controllers;
+
+[ApiController]
+[Route("[controller]")]
+
+public class BukuController : ControllerBase
+{    
+    private static List<Buku> bukus = InitializeData();
+    private static List<Buku> InitializeData()
+    {
+        List<Buku> InitialData = new List<Buku>
+        {
+            new Buku
+            {
+                id = 1,
+                judul = "Boyolali",
+                penulis = "Roni Prasetyo",
+                penerbit = "ABC Publications",
+                issn = "1234-5678",
+                tahun = 2020,
+                status = 1
+            },
+            new Buku
+            {
+                id = 2,
+                judul = "Indonesiaku",
+                penulis = "Zulfikar",
+                penerbit = "XYZ Publications",
+                issn = "5678-1234",
+                tahun = 2018,
+                status = 1
+            }
+        };
+        return InitialData;
+    }
+    [HttpGet]
+public IActionResult GetAllBuku()
+{
+    return Ok(bukus);
+}
+
+[HttpGet("{id}")]
+public IActionResult GetBukuById(int id)
+{
+    var buku = bukus.Find(b => b.id == id);
+    if (buku == null)
+    {
+        return NotFound();
+    }
+    return Ok(buku);
+}
+
+[HttpPost]
+public IActionResult CreateBuku(Buku newBuku)
+{
+    newBuku.id = bukus.Max(b => b.id) + 1; //generate id
+    bukus.Add(newBuku);
+    return CreatedAtAction(nameof(GetBukuById), new { id = newBuku.id }, newBuku);
+}
+
+[HttpPut("{id}")]
+public IActionResult UpdateBuku(int id, Buku updateBuku)
+{
+    var existingBuku = bukus.FirstOrDefault(b => b.id == id);
+    if (existingBuku == null)
+    {
+        return NotFound();
+    }
+
+    existingBuku.judul = updateBuku.judul;
+    existingBuku.penulis = updateBuku.penulis;
+    existingBuku.penerbit = updateBuku.penerbit;
+    existingBuku.issn = updateBuku.issn;
+    existingBuku.tahun = updateBuku.tahun;
+    existingBuku.status = updateBuku.status;
+
+    return NoContent();
+}
+
+[HttpDelete("{id}")]
+public IActionResult DeleteBuku(int id)
+{
+    var buku = bukus.FirstOrDefault(b => b.id == id);
+    if (buku == null)
+    {
+        bukus.Remove(buku);
+        return NotFound();
+    }
+    return Ok(buku);
+}
+
+}
+
+
+
+weather
+namespace Stackup.Api;
+
+public class WeatherForecast
+{
+    public DateOnly Date{ get; set;}
+
+    public int TemperatureC { get; set;}
+
+    public int TemperatureF => 32 + (int) (TemperatureC / 0.5556);
+
+    public string? Summary { get; set;}
+}
+
+weathercon
+using Microsoft.AspNetCore.Mvc;
+using System;
+
+namespace Stackup.Api.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class WeatherForecastController : ControllerBase
+    {
+        private static readonly string[] Summaries = new[]
+        {
+            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+        };
+
+        private readonly ILogger<WeatherForecastController> _logger;
+
+        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        {
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public IEnumerable<WeatherForecast> Get()
+        {
+            var rng = new Random();
+            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                TemperatureC = rng.Next(-20, 55),
+                Summary = Summaries[rng.Next(Summaries.Length)]
+            })
+            .ToArray();
+        }
+    }
+}

@@ -1,0 +1,235 @@
+models/peserta.cs 
+
+public class Peserta 
+{
+    public int id { get; set; }
+    public string nama { get; set; }
+    public string asal { get; set; }
+    public DateTime tanggal_lahir{ get; set; }
+    public string email { get; set; }
+    public string password { get; set; }
+    public int status { get; set; }
+}
+
+controllers/pesertacontroller.cs
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using System.Data;
+
+[Route("api/[controller]")]
+[ApiController]
+
+public class PesertaController : ControllerBase
+{
+    private readonly DbManager _dbManager;
+    Response response = new Response();
+
+    public PesertaController(IConfiguration configuration)
+    {
+        _dbManager = new DbManager(configuration);
+    }
+
+    //GET: api/Peserta
+    [HttpGet]
+    public IActionResult  GetPesertas()
+    {
+        try
+        {
+            response.status = 200;
+            response.message = "Success";
+            response.data = _dbManager.GetAllPesertas();
+        }
+        catch (Exception ex)
+        {
+            response.status = 500;
+            response.message = ex.Message;
+        }
+        return Ok(response);
+    }
+
+    //create api/Peserta
+    [HttpPost]
+    public IActionResult CreatePeserta([FromBody] Peserta peserta)
+    {
+        try
+        {
+            response.status = 200;
+            response.message = "Success";
+            _dbManager.CreatePeserta(peserta);
+        }
+        catch (Exception ex)
+        {
+           response.status = 500;
+           response.message = ex.Message;
+        }
+        return Ok(response);
+    }
+
+    //update api/Peserta
+    [HttpPut("{id}")]
+    public IActionResult UpdatePeserta(int id, [FromBody] Peserta peserta)
+    {
+        try
+        {
+            response.status = 200;
+            response.message = "Success";
+            _dbManager.UpdatePeserta(id, peserta);
+        }
+        catch (Exception ex)
+        {
+           response.status = 500;
+           response.message = ex.Message;
+        }
+        return Ok(response);
+    }
+
+    //delete api/Peserta
+    [HttpDelete("{id}")]
+    public IActionResult DeletePeserta(int id)
+    {
+        try
+        {
+            response.status = 200;
+            response.message = "Success";
+            _dbManager.DeletePeserta(id);
+        }
+        catch (Exception ex)
+        {
+           response.status = 500;
+           response.message = ex.Message;
+        }
+        return Ok(response);
+    }
+}
+
+
+data/db_manager
+
+using System.Data;
+using MySql.Data.MySqlClient;
+
+public class DbManager
+{
+    private readonly string connectionString;
+    private readonly MySqlConnection _connection;
+
+    public DbManager(IConfiguration configuration)
+    {
+        connectionString = configuration.GetConnectionString("DefaultConnection");
+        _connection = new MySqlConnection(connectionString);
+    }
+
+//tabel peserta
+
+    public List<Peserta> GetAllPesertas()
+    {
+        List<Peserta> pesertaList = new List<Peserta>();
+        try
+        {
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM peserta";
+                MySqlCommand command = new MySqlCommand(query, connection);
+                connection.Open();
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Peserta peserta = new Peserta
+                        {
+                            id = Convert.ToInt32(reader["id"]),
+                            nama = reader["Nama"].ToString(),
+                            asal = reader["Asal"].ToString(),
+                            tanggal_lahir = Convert.ToDateTime(reader["Tanggal_Lahir"]),
+                            email = reader["Email"].ToString(),
+                            password = reader["Password"].ToString(),
+                            status = Convert.ToInt32(reader["Status"])
+                        };
+                        pesertaList.Add(peserta);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        return pesertaList;
+    }
+    
+    //create
+    public int CreatePeserta(Peserta peserta)
+    {
+        using (MySqlConnection connection = _connection)
+        {
+            string query = "INSERT INTO peserta (nama, asal, tanggal_lahir, email, password, status) VALUES (@Nama, @Asal, @Tanggal_Lahir, @Email, @Password, @Status)";
+            using (MySqlCommand command = new MySqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Nama", peserta.nama);
+                command.Parameters.AddWithValue("@Asal", peserta.asal);
+                command.Parameters.AddWithValue("@Tanggal_Lahir", peserta.tanggal_lahir);
+                command.Parameters.AddWithValue("@Email", peserta.email);
+                command.Parameters.AddWithValue("@Password", peserta.password);
+                command.Parameters.AddWithValue("@Status", peserta.status);
+
+                connection.Open();
+                return command.ExecuteNonQuery();
+            }
+        }
+        {
+            
+        }
+    }
+
+    //update
+    public int UpdatePeserta(int id, Peserta peserta)
+    {
+        using (MySqlConnection connection = _connection)
+        {
+            string query = "UPDATE peserta SET nama = @Nama, asal = @Asal, tanggal_Lahir = @Tanggal_Lahir, email = @Email, password = @Password, " + " status = @Status WHERE id = @id";
+            using (MySqlCommand command = new MySqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Nama", peserta.nama);
+                command.Parameters.AddWithValue("@Asal", peserta.asal);
+                command.Parameters.AddWithValue("@Tanggal_Lahir", peserta.tanggal_lahir);
+                command.Parameters.AddWithValue("@Email", peserta.email);
+                command.Parameters.AddWithValue("@Password", peserta.password);
+                command.Parameters.AddWithValue("@Status", peserta.status);
+                command.Parameters.AddWithValue("@Id", id);
+
+                connection.Open();
+                return command.ExecuteNonQuery();
+            }
+        }
+        {
+            
+        }
+    }
+
+    //delete
+    public int DeletePeserta(int id)
+    {
+        using (MySqlConnection connection = _connection)
+        {
+            string query = "DELETE FROM peserta WHERE id = @Id";
+            using (MySqlCommand command = new MySqlCommand(query, connection))
+            {
+                command.Parameters.AddWithValue("@Id", id);
+
+                connection.Open();
+                return command.ExecuteNonQuery();
+            }
+        }
+        {
+            
+        }
+    }
+
+models/response.cs
+public class Response
+{
+    public int status { get; set; }
+    public String? message { get; set; }
+    public object? data { get; set;}
+}
